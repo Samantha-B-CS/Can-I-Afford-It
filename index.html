@@ -20,6 +20,7 @@
         </button>
         <div class="collapse navbar-collapse" id="main-navigation">
           <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
+            <li class="nav-item"><a class="nav-link" href="#calculator">Calculator</a></li>
             <li class="nav-item"><a class="nav-link" href="#tools">Tools</a></li>
             <li class="nav-item"><a class="nav-link" href="#top">About</a></li>
           </ul>
@@ -33,6 +34,74 @@
       <div class="container py-lg-5">
         <h1 class="display-1 fw-bold" id="hero-title">Can I afford it?</h1>
         <p class="lead">Work out whether a major purchase fits your budget without overcomplicating things.</p>
+      </div>
+    </section>
+
+    <section class="py-5" id="calculator" aria-labelledby="calculator-title">
+      <div class="container">
+        <div class="row g-5 align-items-start">
+          <div class="col-lg-5">
+            <h2 class="display-6 fw-bold" id="calculator-title">Budget Calculator</h2>
+            <p class="text-body-secondary">Input your regular monthly income and expenses to see how your target purchase fits in over time.</p>
+          </div>
+          <div class="col-lg-7">
+            <form class="card shadow-sm p-4 p-md-5" id="affordability-form">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="income">Monthly income</label>
+                  <div class="input-group">
+                    <span class="input-group-text" aria-hidden="true">£</span>
+                    <input class="form-control" id="income" name="income" type="number" min="0" step="0.01" inputmode="decimal" placeholder="1800" required aria-describedby="income-help">
+                  </div>
+                  <div class="form-text" id="income-help">Take-home pay after deductions.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="spending">Monthly expenses</label>
+                  <div class="input-group">
+                    <span class="input-group-text" aria-hidden="true">£</span>
+                    <input class="form-control" id="spending" name="spending" type="number" min="0" step="0.01" inputmode="decimal" placeholder="1250" required aria-describedby="spending-help">
+                  </div>
+                  <div class="form-text" id="spending-help">Bills, food, and standard costs.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="savings">Available savings</label>
+                  <div class="input-group">
+                    <span class="input-group-text" aria-hidden="true">£</span>
+                    <input class="form-control" id="savings" name="savings" type="number" min="0" step="0.01" inputmode="decimal" value="0" required aria-describedby="savings-help">
+                  </div>
+                  <div class="form-text" id="savings-help">Money allocated specifically for this goal.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="goal-cost">Goal cost</label>
+                  <div class="input-group">
+                    <span class="input-group-text" aria-hidden="true">£</span>
+                    <input class="form-control" id="goal-cost" name="goal-cost" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="6000" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="goal-time">Timeframe</label>
+                  <select class="form-select" id="goal-time" name="goal-time" required>
+                    <option value="" selected disabled>Select duration</option>
+                    <option value="1">1 month</option>
+                    <option value="3">3 months</option>
+                    <option value="6">6 months</option>
+                    <option value="12">1 year</option>
+                    <option value="18">18 months</option>
+                    <option value="24">2 years</option>
+                    <option value="36">3 years</option>
+                    <option value="48">4 years</option>
+                    <option value="60">5 years</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-success btn-lg rounded-pill px-4" type="submit">Calculate</button>
+                </div>
+              </div>
+              <div class="alert mt-4 mb-0" id="result" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+            </form>
+            <p class="text-body-secondary small mt-3 mb-0">For informational purposes only; not official financial advice.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -81,5 +150,52 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script>
+    const form = document.querySelector("#affordability-form");
+    const result = document.querySelector("#result");
+    const currency = new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      maximumFractionDigits: 2
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+
+      const income = Number(form.elements.income.value);
+      const spending = Number(form.elements.spending.value);
+      const savings = Number(form.elements.savings.value);
+      const goalCost = Number(form.elements["goal-cost"].value);
+      const months = Number(form.elements["goal-time"].value);
+      const monthlyAvailable = income - spending;
+      const remainingCost = Math.max(0, goalCost - savings);
+      const monthlyNeeded = remainingCost / months;
+      const isAchievable = monthlyAvailable >= monthlyNeeded;
+
+      result.classList.toggle("alert-success", isAchievable);
+      result.classList.toggle("alert-warning", !isAchievable);
+      result.replaceChildren();
+
+      const heading = document.createElement("h3");
+      heading.className = "h5 fw-bold";
+      const summary = document.createElement("p");
+      summary.className = "mb-0";
+
+      if (remainingCost === 0) {
+        heading.textContent = "Goal covered by savings.";
+        summary.textContent = `Estimated remaining monthly balance: ${currency.format(monthlyAvailable)}.`;
+      } else if (monthlyAvailable <= 0) {
+        heading.textContent = "Deficit detected.";
+        summary.textContent = `Monthly expenses exceed income by ${currency.format(Math.abs(monthlyAvailable))}.`;
+      } else {
+        heading.textContent = isAchievable ? "Goal is achievable." : "Goal exceeds current monthly margin.";
+        summary.textContent = `Required savings rate: ${currency.format(monthlyNeeded)}/mo over ${months} months. Available margin: ${currency.format(monthlyAvailable)}/mo.`;
+      }
+
+      result.append(heading, summary);
+      result.hidden = false;
+    });
+  </script>
 </body>
 </html>
